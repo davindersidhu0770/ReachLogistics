@@ -5,13 +5,12 @@ class OrderItemModel {
   final String productCode;
   final String location;
 
-  OrderItemModel({
-    required this.orderItemId,
-    required this.description,
-    required this.quantity,
-    required this.productCode,
-    required this.location,
-  });
+  OrderItemModel(
+      {required this.orderItemId,
+      required this.description,
+      required this.quantity,
+      required this.productCode,
+      required this.location});
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(

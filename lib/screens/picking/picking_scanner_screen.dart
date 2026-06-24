@@ -22,7 +22,7 @@ class PickingScannerScreen extends StatefulWidget {
 }
 
 class _PickingScannerScreenState extends State<PickingScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(facing: CameraFacing.front);
   final PickingService _service = PickingService();
   final TextEditingController _manualController = TextEditingController();
 

@@ -16,7 +16,7 @@ class DebriefingScannerScreen extends StatefulWidget {
 }
 
 class _DebriefingScannerScreenState extends State<DebriefingScannerScreen> {
-  final MobileScannerController _camera = MobileScannerController();
+  final MobileScannerController _camera = MobileScannerController(facing: CameraFacing.front);
   final DebriefingService _service = DebriefingService();
   final TextEditingController _manualController = TextEditingController();
   final ScrollController _scrollController = ScrollController();

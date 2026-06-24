@@ -31,6 +31,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   final MobileScannerController _controller = MobileScannerController(
     formats: [BarcodeFormat.all],
     detectionSpeed: DetectionSpeed.unrestricted,
+    facing: CameraFacing.front,
   );
   final ScanService _scanService = ScanService();
   final TextEditingController _manualController = TextEditingController();

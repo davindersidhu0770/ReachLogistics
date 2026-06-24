@@ -16,7 +16,7 @@ class VanLoadingScannerScreen extends StatefulWidget {
 }
 
 class _VanLoadingScannerScreenState extends State<VanLoadingScannerScreen> {
-  final MobileScannerController _camera = MobileScannerController();
+  final MobileScannerController _camera = MobileScannerController(facing: CameraFacing.front);
   final VanLoadingService _service = VanLoadingService();
   final TextEditingController _manualController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
