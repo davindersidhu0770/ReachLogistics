@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../models/order_item_model.dart';
 import '../../services/picking_service.dart';
+import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
 
 class PickingBatchScannerScreen extends StatefulWidget {
@@ -29,6 +32,15 @@ class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
   String? _statusMsg;
   bool _statusIsError = false;
   DateTime? _lastScanTime;
+  StreamSubscription<String>? _zebraSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Zebra hardware trigger scans (via DataWedge) feed the same handler
+    // as the camera preview below.
+    _zebraSub = ZebraScanService.instance.onScan.listen(_handleScan);
+  }
 
   // ── Scan handler ─────────────────────────────────────────────────────────
 
@@ -198,6 +210,7 @@ class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
 
   @override
   void dispose() {
+    _zebraSub?.cancel();
     _camera.dispose();
     _manualController.dispose();
     _scrollController.dispose();

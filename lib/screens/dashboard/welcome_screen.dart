@@ -7,6 +7,9 @@ import '../picking/picking_bays_screen.dart';
 import '../van_loading/van_loading_bays_screen.dart';
 import '../confirm_order/confirm_order_bays_screen.dart';
 import '../debriefing/debriefing_bays_screen.dart';
+import '../locate/locate_stock_screen.dart';
+import '../stock_condition/change_stock_condition_screen.dart';
+import '../stock_lookup/stock_lookup_screen.dart';
 import '../auth/login.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -60,105 +63,142 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          /// HEADER
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 120,
-              left: 20,
-              right: 20,
-              bottom: 40,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF4D2D), Color(0xFFFF7A59)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            /// HEADER
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 120,
+                left: 20,
+                right: 20,
+                bottom: 40,
               ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(35)),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  "Welcome, ${username ?? ""}",
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF4D2D), Color(0xFFFF7A59)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Warehouse Dashboard",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          /// MENU LIST
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.07),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(35)),
               ),
               child: Column(
                 children: [
-                  _menuItem(
-                    icon: Icons.inventory_2_outlined,
-                    color: const Color(0xFFFF4D2D),
-                    title: "Stock In",
-                    subtitle: "Receive & log incoming stock",
-                    onTap: _showDatePicker,
-                    isFirst: true,
+                  Text(
+                    "Welcome, ${username ?? ""}",
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 16),
                   ),
-                  _menuItem(
-                    icon: Icons.local_shipping_outlined,
-                    color: Colors.blue,
-                    title: "Picking",
-                    subtitle: "Pick items for customer orders",
-                    onTap: _showPickingDatePicker,
-                  ),
-                  _menuItem(
-                    icon: Icons.airport_shuttle_outlined,
-                    color: Colors.teal,
-                    title: "Van Loading",
-                    subtitle: "Load orders onto delivery vans",
-                    onTap: _showVanLoadingDatePicker,
-                  ),
-                  _menuItem(
-                    icon: Icons.fact_check_outlined,
-                    color: const Color(0xFF6A1B9A),
-                    title: "Confirm Order",
-                    subtitle: "Confirm & sign off deliveries",
-                    onTap: _showConfirmOrderDatePicker,
-                  ),
-                  _menuItem(
-                    icon: Icons.assignment_return_outlined,
-                    color: const Color(0xFFE65100),
-                    title: "De-briefing",
-                    subtitle: "Return & debrief after delivery",
-                    onTap: _showDebriefingDatePicker,
-                    isLast: true,
+                  const SizedBox(height: 6),
+                  const Text(
+                    "Warehouse Dashboard",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 24),
+
+            /// MENU LIST
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _menuItem(
+                      icon: Icons.inventory_2_outlined,
+                      color: const Color(0xFFFF4D2D),
+                      title: "Stock In",
+                      subtitle: "Receive & log incoming stock",
+                      onTap: _showDatePicker,
+                      isFirst: true,
+                    ),
+                    _menuItem(
+                      icon: Icons.local_shipping_outlined,
+                      color: Colors.blue,
+                      title: "Picking",
+                      subtitle: "Pick items for customer orders",
+                      onTap: _showPickingDatePicker,
+                    ),
+                    _menuItem(
+                      icon: Icons.airport_shuttle_outlined,
+                      color: Colors.teal,
+                      title: "Van Loading",
+                      subtitle: "Load orders onto delivery vans",
+                      onTap: _showVanLoadingDatePicker,
+                    ),
+                    _menuItem(
+                      icon: Icons.fact_check_outlined,
+                      color: const Color(0xFF6A1B9A),
+                      title: "Confirm Order",
+                      subtitle: "Confirm & sign off deliveries",
+                      onTap: _showConfirmOrderDatePicker,
+                    ),
+                    _menuItem(
+                      icon: Icons.assignment_return_outlined,
+                      color: const Color(0xFFE65100),
+                      title: "De-briefing",
+                      subtitle: "Return & debrief after delivery",
+                      onTap: _showDebriefingDatePicker,
+                    ),
+                    _menuItem(
+                      icon: Icons.location_on_outlined,
+                      color: const Color(0xFF5C6BC0),
+                      title: "Locate Stock",
+                      subtitle: "Scan items into a new location",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const LocateStockScreen()),
+                      ),
+                    ),
+                    _menuItem(
+                      icon: Icons.published_with_changes_outlined,
+                      color: const Color(0xFFB0245C),
+                      title: "Change Stock Condition",
+                      subtitle: "Scan items to update their condition",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ChangeStockConditionScreen()),
+                      ),
+                    ),
+                    _menuItem(
+                      icon: Icons.search,
+                      color: const Color(0xFF2E7D32),
+                      title: "Stock Lookup",
+                      subtitle: "Check unit counts across locations",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const StockLookupScreen()),
+                      ),
+                      isLast: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

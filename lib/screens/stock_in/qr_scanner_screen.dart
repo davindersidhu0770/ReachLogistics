@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/scan_service.dart';
+import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
 
 class QRScannerScreen extends StatefulWidget {
@@ -40,11 +43,15 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   String? _scannedSerial;
   bool _isProcessing = false;
   DateTime? _lastScanTime;
+  StreamSubscription<String>? _zebraSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _controller.start());
+    // Zebra hardware trigger scans (via DataWedge) feed the same handler
+    // as the camera preview below.
+    _zebraSub = ZebraScanService.instance.onScan.listen(_handleScan);
   }
 
   bool get _readyToSubmit => _scannedUid != null && _scannedSerial != null;
@@ -77,7 +84,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     } else if (_scannedSerial == null) {
       if (code == _scannedUid) return; // prevent same code captured as serial
       setState(() => _scannedSerial = code);
-      _controller.stop(); // both codes captured — release camera
+      // Both codes captured — release the camera. Deferred to after this
+      // frame because we're still inside the camera's own detection
+      // callback here; calling stop() synchronously on this call stack
+      // makes CameraX block the main thread waiting for the in-flight
+      // frame to finish, which can trip Android's ANR watchdog.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _controller.stop());
       _showSnack("Serial captured. Review and submit", Colors.green);
     }
   }
@@ -174,6 +186,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
   @override
   void dispose() {
+    _zebraSub?.cancel();
     _controller.stop();
     _controller.dispose();
     _manualController.dispose();
