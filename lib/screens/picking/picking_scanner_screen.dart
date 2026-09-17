@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../models/picking_scan_result.dart';
 import '../../services/picking_service.dart';
 import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
+import '../../widgets/fullscreen_camera_scan.dart';
 
 class PickingScannerScreen extends StatefulWidget {
   final int orderItemId;
@@ -25,7 +25,6 @@ class PickingScannerScreen extends StatefulWidget {
 }
 
 class _PickingScannerScreenState extends State<PickingScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController(facing: CameraFacing.front);
   final PickingService _service = PickingService();
   final TextEditingController _manualController = TextEditingController();
 
@@ -173,7 +172,6 @@ class _PickingScannerScreenState extends State<PickingScannerScreen> {
   @override
   void dispose() {
     _zebraSub?.cancel();
-    _controller.dispose();
     _manualController.dispose();
     super.dispose();
   }
@@ -199,43 +197,11 @@ class _PickingScannerScreenState extends State<PickingScannerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── FULL SCREEN CAMERA ──────────────────────────────────────────
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              final code = capture.barcodes.first.rawValue;
-              if (code != null) _handleScan(code);
-            },
-          ),
-
-          // ── DARK VIGNETTE OVERLAY ───────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 0.85,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.55),
-                ],
-              ),
-            ),
-          ),
-
-          // ── SCAN FRAME ──────────────────────────────────────────────────
-          Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                border: Border.all(color: accent, width: 3),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                children: _corners(accent),
-              ),
-            ),
+          // ── CAMERA (off by default — Zebra hardware trigger scans work
+          // without it; tap "Open Camera" for an on-screen fallback) ──────
+          FullscreenCameraScan(
+            onDetect: _handleScan,
+            accent: accent,
           ),
 
           // ── TOP BAR ─────────────────────────────────────────────────────
@@ -347,32 +313,6 @@ class _PickingScannerScreenState extends State<PickingScannerScreen> {
     );
   }
 
-  List<Widget> _corners(Color color) {
-    const size = 22.0;
-    const thick = 3.5;
-
-    Widget corner(AlignmentGeometry alignment, bool flipX, bool flipY) {
-      return Align(
-        alignment: alignment,
-        child: Transform.scale(
-          scaleX: flipX ? -1 : 1,
-          scaleY: flipY ? -1 : 1,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: CustomPaint(painter: _CornerPainter(color, thick)),
-          ),
-        ),
-      );
-    }
-
-    return [
-      corner(Alignment.topLeft, false, false),
-      corner(Alignment.topRight, true, false),
-      corner(Alignment.bottomLeft, false, true),
-      corner(Alignment.bottomRight, true, true),
-    ];
-  }
 }
 
 // ── Step Indicator ───────────────────────────────────────────────────────────
@@ -442,33 +382,4 @@ class _StepIndicator extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Corner Painter ───────────────────────────────────────────────────────────
-
-class _CornerPainter extends CustomPainter {
-  final Color color;
-  final double thick;
-
-  _CornerPainter(this.color, this.thick);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = thick
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_CornerPainter old) =>
-      old.color != color || old.thick != thick;
 }

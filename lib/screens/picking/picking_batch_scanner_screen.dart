@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../models/order_item_model.dart';
 import '../../services/picking_service.dart';
 import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
+import '../../widgets/fullscreen_camera_scan.dart';
 
 class PickingBatchScannerScreen extends StatefulWidget {
   final List<OrderItemModel> items;
@@ -19,7 +19,6 @@ class PickingBatchScannerScreen extends StatefulWidget {
 }
 
 class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
-  final MobileScannerController _camera = MobileScannerController();
   final PickingService _service = PickingService();
   final TextEditingController _manualController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -211,7 +210,6 @@ class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
   @override
   void dispose() {
     _zebraSub?.cancel();
-    _camera.dispose();
     _manualController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -237,48 +235,16 @@ class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Camera ─────────────────────────────────────────────────────
+          // ── Camera (off by default — Zebra hardware trigger scans work
+          // without it; tap "Open Camera" for an on-screen fallback) ──────
           if (!_allDone)
-            MobileScanner(
-              controller: _camera,
-              onDetect: (capture) {
-                final code = capture.barcodes.first.rawValue;
-                if (code != null) _handleScan(code);
-              },
+            FullscreenCameraScan(
+              onDetect: _handleScan,
+              accent: accent,
             ),
 
           // ── All done overlay ───────────────────────────────────────────
           if (_allDone) _buildAllDoneOverlay(total),
-
-          // ── Vignette ───────────────────────────────────────────────────
-          if (!_allDone)
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.85,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.55),
-                  ],
-                ),
-              ),
-            ),
-
-          // ── Scan frame ─────────────────────────────────────────────────
-          if (!_allDone)
-            Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  border: Border.all(color: accent, width: 3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(children: _corners(accent)),
-              ),
-            ),
 
           // ── Top bar ────────────────────────────────────────────────────
           Positioned(
@@ -571,62 +537,4 @@ class _PickingBatchScannerScreenState extends State<PickingBatchScannerScreen> {
     );
   }
 
-  // ── Corner decorations ────────────────────────────────────────────────────
-
-  List<Widget> _corners(Color color) {
-    const size = 22.0;
-    const thick = 3.5;
-
-    Widget corner(AlignmentGeometry alignment, bool flipX, bool flipY) {
-      return Align(
-        alignment: alignment,
-        child: Transform.scale(
-          scaleX: flipX ? -1 : 1,
-          scaleY: flipY ? -1 : 1,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: CustomPaint(painter: _CornerPainter(color, thick)),
-          ),
-        ),
-      );
-    }
-
-    return [
-      corner(Alignment.topLeft, false, false),
-      corner(Alignment.topRight, true, false),
-      corner(Alignment.bottomLeft, false, true),
-      corner(Alignment.bottomRight, true, true),
-    ];
-  }
-}
-
-// ── Corner Painter ────────────────────────────────────────────────────────────
-
-class _CornerPainter extends CustomPainter {
-  final Color color;
-  final double thick;
-
-  _CornerPainter(this.color, this.thick);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = thick
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, size.height)
-        ..lineTo(0, 0)
-        ..lineTo(size.width, 0),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_CornerPainter old) =>
-      old.color != color || old.thick != thick;
 }

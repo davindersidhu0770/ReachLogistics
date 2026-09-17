@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/scan_service.dart';
 import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
+import '../../widgets/camera_scan_box.dart';
 
 class QRScannerScreen extends StatefulWidget {
   final String containerId;
@@ -31,11 +31,6 @@ class QRScannerScreen extends StatefulWidget {
 }
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController(
-    formats: [BarcodeFormat.all],
-    detectionSpeed: DetectionSpeed.unrestricted,
-    facing: CameraFacing.front,
-  );
   final ScanService _scanService = ScanService();
   final TextEditingController _manualController = TextEditingController();
 
@@ -48,9 +43,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _controller.start());
     // Zebra hardware trigger scans (via DataWedge) feed the same handler
-    // as the camera preview below.
+    // as the optional on-screen camera below. Camera is off by default.
     _zebraSub = ZebraScanService.instance.onScan.listen(_handleScan);
   }
 
@@ -84,12 +78,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     } else if (_scannedSerial == null) {
       if (code == _scannedUid) return; // prevent same code captured as serial
       setState(() => _scannedSerial = code);
-      // Both codes captured — release the camera. Deferred to after this
-      // frame because we're still inside the camera's own detection
-      // callback here; calling stop() synchronously on this call stack
-      // makes CameraX block the main thread waiting for the in-flight
-      // frame to finish, which can trip Android's ANR watchdog.
-      WidgetsBinding.instance.addPostFrameCallback((_) => _controller.stop());
+      // Both codes captured — the CameraScanBox unmounts (and releases the
+      // camera) automatically once _readyToSubmit hides it below.
       _showSnack("Serial captured. Review and submit", Colors.green);
     }
   }
@@ -128,7 +118,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       _scannedSerial = null;
     });
     _lastScanTime = null;
-    _controller.start(); // restart camera for re-scanning after error
   }
 
   /// =========================
@@ -187,8 +176,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   @override
   void dispose() {
     _zebraSub?.cancel();
-    _controller.stop();
-    _controller.dispose();
     _manualController.dispose();
     super.dispose();
   }
@@ -203,16 +190,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-    );
-
-    // Restrict detection to the visible preview box only.
-    // Prevents the large carton barcode outside the frame from being picked up
-    // and focuses the decoder on the exact 220px area the user is aiming at.
-    final scanWindow = Rect.fromLTWH(
-      0,
-      0,
-      MediaQuery.of(context).size.width - 40, // 20px margin each side
-      220,
     );
 
     return Scaffold(
@@ -313,31 +290,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
             /// SCANNER — hide once both codes are captured
             if (!_readyToSubmit)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                height: 220,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: Stack(
-                    children: [
-                      MobileScanner(
-                        controller: _controller,
-                        scanWindow: scanWindow,
-                        onDetect: (capture) {
-                          if (capture.barcodes.isEmpty) return;
-                          final code = capture.barcodes.first.rawValue;
-                          if (code != null) _handleScan(code);
-                        },
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: const Color(0xFFFF4D2D), width: 3),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: CameraScanBox(
+                  onDetect: _handleScan,
+                  accent: const Color(0xFFFF4D2D),
                 ),
               ),
 

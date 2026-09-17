@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../models/location_model.dart';
 import '../../services/locate_service.dart';
 import '../../services/zebra_scan_service.dart';
 import '../../utils/scanner_beep.dart';
+import '../../widgets/camera_scan_box.dart';
 
 class LocateStockScreen extends StatefulWidget {
   const LocateStockScreen({super.key});
@@ -28,8 +28,6 @@ class _RecentScan {
 class _LocateStockScreenState extends State<LocateStockScreen> {
   static const _accent = Color(0xFF5C6BC0);
 
-  final MobileScannerController _controller =
-      MobileScannerController(facing: CameraFacing.front);
   final LocateService _service = LocateService();
   final TextEditingController _manualController = TextEditingController();
 
@@ -136,7 +134,6 @@ class _LocateStockScreenState extends State<LocateStockScreen> {
   @override
   void dispose() {
     _zebraSub?.cancel();
-    _controller.dispose();
     _manualController.dispose();
     super.dispose();
   }
@@ -148,13 +145,6 @@ class _LocateStockScreenState extends State<LocateStockScreen> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-    );
-
-    final scanWindow = Rect.fromLTWH(
-      0,
-      0,
-      MediaQuery.of(context).size.width - 40,
-      220,
     );
 
     return Scaffold(
@@ -262,37 +252,28 @@ class _LocateStockScreenState extends State<LocateStockScreen> {
             const SizedBox(height: 20),
 
             /// SCANNER
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              height: 220,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: Stack(
-                  children: [
-                    MobileScanner(
-                      controller: _controller,
-                      scanWindow: scanWindow,
-                      onDetect: (capture) {
-                        if (capture.barcodes.isEmpty) return;
-                        final code = capture.barcodes.first.rawValue;
-                        if (code != null) _handleScan(code);
-                      },
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _accent, width: 3),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Stack(
+                children: [
+                  CameraScanBox(
+                    onDetect: _handleScan,
+                    accent: _accent,
+                  ),
+                  if (_isProcessing)
+                    Positioned.fill(
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    if (_isProcessing)
-                      Container(
-                        color: Colors.black26,
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                        child: Container(
+                          color: Colors.black26,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                                color: Colors.white),
+                          ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
 
